@@ -1,15 +1,19 @@
 package com.eventostec.api.service;
 
+import com.eventostec.api.domain.address.Address;
+import com.eventostec.api.domain.cupon.Coupon;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventAddressProjection;
 import com.eventostec.api.domain.event.EventDetailsDTO;
 import com.eventostec.api.domain.event.EventRequestDTO;
 import com.eventostec.api.domain.event.EventResponseDTO;
-import com.eventostec.api.exception.EventNotFoundException;
+import com.eventostec.api.exception.ResourceNotFoundException;
 import com.eventostec.api.repositories.EventRepository;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,8 +26,16 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class EventService {
 
+    private final AddressService addressService;
+    private final CouponService couponService;
+
     @Autowired
     EventRepository eventRepository;
+
+    EventService(AddressService addressService, CouponService couponService) {
+        this.addressService = addressService;
+        this.couponService = couponService;
+    }
 
     public Event createEvent(EventRequestDTO data){
 
@@ -106,15 +118,37 @@ public class EventService {
         }
     }
 
-    /* public EventDetailsDTO getEventDetails(UUID id){
-        existsEventById(id);
-        
+    public EventDetailsDTO getEventDetails(UUID id){
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento com id " + id + "nao encontrado"));
 
-    } */
+
+        Address address = addressService.findyByEventId(id);
+        List<Coupon> coupons = couponService.consultCoupons(id, new Date());
+
+        List<EventDetailsDTO.CouponDTO> couponDTOs = coupons.stream()
+            .map(coupon -> new EventDetailsDTO.CouponDTO(
+                coupon.getCode(),
+                coupon.getDiscount(),
+                coupon.getValid()))
+            .collect(Collectors.toList());
+
+        return new EventDetailsDTO(
+            event.getId(),
+            event.getTitle(),
+            event.getDescription(),
+            event.getDate(),
+            address.getCity(),
+            address.getUf(),
+            event.getImgUrl(),
+            event.getEventUrl(),
+            couponDTOs);      
+
+    } 
 
     private Boolean existsEventById(UUID id){
         return eventRepository.findById(id)
                         .map(e -> true)
-                        .orElseThrow(() -> new EventNotFoundException());
+                        .orElseThrow(() -> new ResourceNotFoundException("Evento com id " + id + "nao encontrado"));
     }
 }

@@ -9,8 +9,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class EventExceptionHandler extends ResponseEntityExceptionHandler {
     
-    @ExceptionHandler(EventNotFoundException.class)
-    private ResponseEntity<String> eventNotFoundExceptionHandler(EventExceptionHandler exception){
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Event not found");
+    @ExceptionHandler(ResourceNotFoundException.class)
+    private ResponseEntity<String> resourceNotFoundExceptionHandler(EventExceptionHandler exception){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Resource not found");
     }
 }
